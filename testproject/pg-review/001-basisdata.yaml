@@ -1,0 +1,82 @@
+databaseChangeLog:
+- changeSet:
+    id: 1790504958161-1
+    author: root (generated)
+    changes:
+    - insert:
+        columns:
+        - column:
+            name: ID
+            value: 3f2b8c1e-8d4a-4c7e-9b1a-2e6f5d4c3b2a
+        - column:
+            name: CODE
+            value: IDEAL
+        - column:
+            name: ACTIEF
+            valueNumeric: 1
+        tableName: BETAALMETHODE
+    - insert:
+        columns:
+        - column:
+            name: ID
+            value: 7a1c9e2d-4b3f-4e8a-a6d5-1c2b3a4f5e6d
+        - column:
+            name: CODE
+            value: ACCEPTGIRO
+        - column:
+            name: ACTIEF
+            valueNumeric: 0
+        tableName: BETAALMETHODE
+- changeSet:
+    id: 1790504958161-2
+    author: root (generated)
+    changes:
+    - insert:
+        columns:
+        - column:
+            name: ID
+            valueNumeric: 1
+        - column:
+            name: NAAM
+            value: Voorbeeldklant
+        - column:
+            name: ACTIEF
+            valueNumeric: 1
+        - column:
+            name: NIEUWSBRIEF
+            value: N
+        - column:
+            name: GEBLOKKEERD
+            valueNumeric: 0
+        - column:
+            name: MAIL_OPTIN
+            valueNumeric: 1
+        - column:
+            name: VIP
+            valueNumeric: 0
+        - column:
+            name: KLANTTYPE_ID
+            valueNumeric: 1
+        tableName: KLANT
+- changeSet:
+    id: 1790504958161-3
+    author: root (generated)
+    changes:
+    - insert:
+        columns:
+        - column:
+            name: ID
+            valueNumeric: 1
+        - column:
+            name: CODE
+            value: PARTICULIER
+        tableName: KLANTTYPE
+    - insert:
+        columns:
+        - column:
+            name: ID
+            valueNumeric: 2
+        - column:
+            name: CODE
+            value: OVERHEID
+        tableName: KLANTTYPE

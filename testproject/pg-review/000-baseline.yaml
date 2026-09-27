@@ -1,0 +1,39 @@
+databaseChangeLog:
+  - changeSet:
+      id: pg-baseline-1
+      author: db2-migratie
+      changes:
+        - createTable:
+            tableName: klanttype
+            columns:
+              - column: {name: id, type: BIGINT, constraints: {primaryKey: true}}
+              - column: {name: code, type: VARCHAR(20)}
+        - createTable:
+            tableName: klant
+            columns:
+              - column: {name: id, type: BIGINT, autoIncrement: true, constraints: {primaryKey: true}}
+              - column: {name: naam, type: VARCHAR(100)}
+              - column: {name: actief, type: BOOLEAN}
+              - column: {name: nieuwsbrief, type: BOOLEAN}
+              # besluit in de review: blijft een getal (er bestaan waarden 2 = 'tijdelijk')
+              - column: {name: geblokkeerd, type: SMALLINT}
+              - column: {name: mail_optin, type: BOOLEAN}
+              - column: {name: vip, type: SMALLINT}
+              - column: {name: externe_id, type: UUID}
+              - column: {name: klanttype_id, type: BIGINT}
+              - column: {name: postcode, type: VARCHAR(6)}
+              - column: {name: adres_geheim, type: BOOLEAN}
+              - column: {name: verwijderd, type: BOOLEAN}
+        - createTable:
+            tableName: betaalmethode
+            columns:
+              - column: {name: id, type: UUID, constraints: {primaryKey: true}}
+              - column: {name: code, type: VARCHAR(20)}
+              - column: {name: actief, type: BOOLEAN}
+              - column: {name: referentie, type: UUID}
+        # audit_regel en betaalmethode.sortering ontbreken bewust (scenario's voor de meldingen)
+        - createIndex:
+            tableName: klant
+            indexName: ix_klant_naam
+            columns:
+              - column: {name: naam}

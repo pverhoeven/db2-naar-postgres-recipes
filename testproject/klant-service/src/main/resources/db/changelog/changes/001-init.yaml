@@ -1,0 +1,47 @@
+databaseChangeLog:
+  - changeSet:
+      id: 001-tabellen
+      author: team
+      changes:
+        - createTable:
+            tableName: KLANTTYPE
+            columns:
+              - column: {name: ID, type: BIGINT, constraints: {primaryKey: true}}
+              - column: {name: CODE, type: VARCHAR(20)}
+        - createTable:
+            tableName: KLANT
+            columns:
+              - column: {name: ID, type: BIGINT, autoIncrement: true, constraints: {primaryKey: true}}
+              - column: {name: NAAM, type: VARCHAR(100)}
+              - column: {name: ACTIEF, type: SMALLINT}
+              - column: {name: NIEUWSBRIEF, type: CHAR(1)}
+              - column: {name: GEBLOKKEERD, type: SMALLINT}
+              - column: {name: MAIL_OPTIN, type: SMALLINT}
+              - column: {name: VIP, type: SMALLINT}
+              - column: {name: EXTERNE_ID, type: CHAR(36)}
+              - column: {name: KLANTTYPE_ID, type: BIGINT}
+              - column: {name: POSTCODE, type: VARCHAR(6)}
+              - column: {name: ADRES_GEHEIM, type: CHAR(1)}
+              - column: {name: VERWIJDERD, type: SMALLINT}
+        - createTable:
+            tableName: BETAALMETHODE
+            columns:
+              - column: {name: ID, type: CHAR(36), constraints: {primaryKey: true}}
+              - column: {name: CODE, type: VARCHAR(20)}
+              - column: {name: ACTIEF, type: SMALLINT}
+              - column: {name: REFERENTIE, type: CHAR(36)}
+              - column: {name: SORTERING, type: INTEGER}
+        - createTable:
+            tableName: AUDIT_REGEL
+            columns:
+              - column: {name: ID, type: BIGINT, constraints: {primaryKey: true}}
+              - column: {name: VERWERKT, type: SMALLINT}
+  - changeSet:
+      id: 001-klanttypes
+      author: team
+      changes:
+        - insert:
+            tableName: KLANTTYPE
+            columns:
+              - column: {name: ID, valueNumeric: 1}
+              - column: {name: CODE, value: PARTICULIER}

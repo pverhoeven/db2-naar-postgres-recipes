@@ -1,0 +1,8 @@
+# Omgevingen (O/T/A/P): schema in hoofdletters, wordt gemeld
+spring:
+  jpa:
+    properties:
+      hibernate:
+        default_schema: KLANTDB
+  liquibase:
+    default-schema: KLANTDB

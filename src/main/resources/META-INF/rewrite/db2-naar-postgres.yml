@@ -1,0 +1,132 @@
+# Samengestelde recipes voor de overstap van DB2 naar Postgres.
+#
+# Voorwaarde: de gereviewde Postgres-changelogs (baseline + basisdata) staan al in
+# src/main/resources/db/changelog/postgres/ (dat doet migreer-naar-postgres.sh).
+#
+# Waarden met AANPASSEN zijn aannames over jullie conventies.
+---
+type: specs.openrewrite.org/v1beta/recipe
+name: nl.example.migratie.Db2NaarPostgres
+displayName: DB2 naar Postgres
+description: >-
+  Zet een microservice om van DB2 naar Postgres: changelogs, entities, pom en Spring-properties.
+  Meldt wat handmatig moet in de datatabel MigratieBevindingen.
+recipeList:
+  - nl.example.migratie.Db2NaarPostgresChangelogs
+  - nl.example.migratie.StemEntitiesAfOpPostgres
+  - nl.example.migratie.Db2NaarPostgresPom
+  - nl.example.migratie.Db2NaarPostgresSpring
+  - nl.example.migratie.H2NaarTestcontainers
+  - nl.example.migratie.ZoekDb2Restanten
+---
+type: specs.openrewrite.org/v1beta/recipe
+name: nl.example.migratie.Db2NaarPostgresPom
+displayName: DB2-driver vervangen door Postgres-driver
+description: >-
+  Vervangt de DB2-driver (JTOpen net.sf.jt400:jt400 of com.ibm.db2:jcc) door
+  org.postgresql:postgresql (versie uit het Spring Boot BOM).
+recipeList:
+  # JTOpen (DB2 for i). Oudere versies hebben een classifier (java8/java11) die de
+  # Postgres-driver niet heeft; die gaat er eerst af.
+  - org.openrewrite.maven.ChangeDependencyClassifier:
+      groupId: net.sf.jt400
+      artifactId: jt400
+      changeManagedDependency: true
+  - org.openrewrite.maven.ChangeDependencyGroupIdAndArtifactId:
+      oldGroupId: net.sf.jt400
+      oldArtifactId: jt400
+      newGroupId: org.postgresql
+      newArtifactId: postgresql
+      newVersion: 42.x
+      overrideManagedVersion: false
+  # IBM Data Server Driver (DB2 LUW/z)
+  - org.openrewrite.maven.ChangeDependencyGroupIdAndArtifactId:
+      oldGroupId: com.ibm.db2
+      oldArtifactId: jcc
+      newGroupId: org.postgresql
+      newArtifactId: postgresql
+      newVersion: 42.x
+      overrideManagedVersion: false
+  - org.openrewrite.maven.ChangeDependencyScope:
+      groupId: org.postgresql
+      artifactId: postgresql
+      newScope: runtime
+---
+type: specs.openrewrite.org/v1beta/recipe
+name: nl.example.migratie.Db2NaarPostgresSpring
+displayName: Spring-properties voor Postgres
+description: >-
+  Datasource, driver, dialect en de CHAR-mapping voor uuid in application*.yaml en .properties
+  onder src/main. De testconfiguratie doet H2NaarTestcontainers.
+# Alleen src/main: anders krijgt de testconfiguratie de productie-URL
+preconditions:
+  - org.openrewrite.FindSourceFiles:
+      filePattern: "src/main/resources/**;**/src/main/resources/**"
+recipeList:
+  # AANPASSEN: jullie namen van de omgevingsvariabelen.
+  # \${..} is een letterlijke ${..}; zonder backslash vult OpenRewrite hem zelf in bij het laden.
+  - org.openrewrite.java.spring.ChangeSpringPropertyValue:
+      propertyKey: spring.datasource.url
+      newValue: jdbc:postgresql://\${DB_HOST}:\${DB_PORT:5432}/\${DB_NAME}
+  - org.openrewrite.java.spring.ChangeSpringPropertyValue:
+      propertyKey: spring.datasource.driver-class-name
+      newValue: org.postgresql.Driver
+  # Hibernate detecteert het dialect zelf
+  - org.openrewrite.java.spring.DeleteSpringProperty:
+      propertyKey: spring.jpa.database-platform
+  - org.openrewrite.java.spring.DeleteSpringProperty:
+      propertyKey: spring.jpa.properties.hibernate.dialect
+  # uuid-kolommen zijn nu echte uuid's
+  - org.openrewrite.java.spring.DeleteSpringProperty:
+      propertyKey: spring.jpa.properties.hibernate.type.preferred_uuid_jdbc_type
+---
+type: specs.openrewrite.org/v1beta/recipe
+name: nl.example.migratie.H2NaarTestcontainers
+displayName: H2 vervangen door Testcontainers Postgres
+description: >-
+  Vervangt H2 door Testcontainers 2 met Postgres, genereert TestcontainersConfiguration en
+  Local<App> in src/test/java, en haalt de datasource-instellingen uit de testconfiguratie
+  (die levert @ServiceConnection).
+recipeList:
+  - org.openrewrite.maven.ChangeDependencyGroupIdAndArtifactId:
+      oldGroupId: com.h2database
+      oldArtifactId: h2
+      newGroupId: org.testcontainers
+      newArtifactId: testcontainers-postgresql
+      newVersion: 2.x
+      overrideManagedVersion: false
+  - org.openrewrite.maven.ChangeDependencyScope:
+      groupId: org.testcontainers
+      artifactId: testcontainers-postgresql
+      newScope: test
+  - org.openrewrite.maven.AddDependency:
+      groupId: org.springframework.boot
+      artifactId: spring-boot-testcontainers
+      version: 4.x
+      scope: test
+      onlyIfUsing: org.springframework.boot.test.context.SpringBootTest
+  - nl.example.migratie.VoegTestcontainersToe
+  - nl.example.migratie.TestconfiguratieZonderDatasource
+---
+type: specs.openrewrite.org/v1beta/recipe
+name: nl.example.migratie.TestconfiguratieZonderDatasource
+displayName: Datasource uit de testconfiguratie
+description: Verwijdert H2- of podman-datasource-instellingen uit src/test/resources; @ServiceConnection levert ze.
+preconditions:
+  - org.openrewrite.FindSourceFiles:
+      filePattern: "src/test/resources/**;**/src/test/resources/**"
+recipeList:
+  - org.openrewrite.java.spring.DeleteSpringProperty:
+      propertyKey: spring.datasource.url
+  - org.openrewrite.java.spring.DeleteSpringProperty:
+      propertyKey: spring.datasource.driver-class-name
+  - org.openrewrite.java.spring.DeleteSpringProperty:
+      propertyKey: spring.datasource.username
+  - org.openrewrite.java.spring.DeleteSpringProperty:
+      propertyKey: spring.datasource.password
+  - org.openrewrite.java.spring.DeleteSpringProperty:
+      propertyKey: spring.jpa.database-platform
+  - org.openrewrite.java.spring.DeleteSpringProperty:
+      propertyKey: spring.jpa.properties.hibernate.dialect
+  - org.openrewrite.java.spring.DeleteSpringProperty:
+      propertyKey: spring.jpa.properties.hibernate.type.preferred_uuid_jdbc_type

@@ -1,0 +1,17 @@
+spring:
+  application:
+    name: klant-service
+  datasource:
+    url: jdbc:as400://${DB_HOST};naming=sql;libraries=KLANTDB;date format=iso
+    driver-class-name: com.ibm.as400.access.AS400JDBCDriver
+    username: ${DB_USER}
+    password: ${DB_PASSWORD}
+  jpa:
+    database-platform: org.hibernate.dialect.DB2iDialect
+    open-in-view: false
+    properties:
+      hibernate:
+        type:
+          preferred_uuid_jdbc_type: CHAR
+  liquibase:
+    change-log: classpath:db/changelog/db.changelog-master.yaml

@@ -1,0 +1,189 @@
+diff --git a/src/main/java/nl/example/klant/domein/Adres.java b/src/main/java/nl/example/klant/domein/Adres.java
+index d203232..4a8b7eb 100644
+--- a/src/main/java/nl/example/klant/domein/Adres.java
++++ b/src/main/java/nl/example/klant/domein/Adres.java
+@@ -1,18 +1,15 @@
+ package nl.example.klant.domein;
+ 
+ import jakarta.persistence.Column;
+-import jakarta.persistence.Convert;
+ import jakarta.persistence.Embeddable;
+-import nl.example.klant.converter.JaNeeBooleanConverter;
+ 
+-/** Scenario: @Embeddable met converter. De recipe kent de tabel niet en meldt dit. */
++/** Handwerk: adres_geheim is boolean in Postgres, converter weg. */
+ @Embeddable
+ public class Adres {
+ 
+     @Column(name = "POSTCODE")
+     private String postcode;
+ 
+-    @Convert(converter = JaNeeBooleanConverter.class)
+     @Column(name = "ADRES_GEHEIM")
+     private Boolean geheim;
+ 
+diff --git a/src/main/java/nl/example/klant/domein/AuditRegel.java b/src/main/java/nl/example/klant/domein/AuditRegel.java
+index 111c003..3e6aec0 100644
+--- a/src/main/java/nl/example/klant/domein/AuditRegel.java
++++ b/src/main/java/nl/example/klant/domein/AuditRegel.java
+@@ -1,12 +1,10 @@
+ package nl.example.klant.domein;
+ 
+-import jakarta.persistence.Convert;
+ import jakarta.persistence.Entity;
+ import jakarta.persistence.Id;
+ import jakarta.persistence.Table;
+-import nl.example.klant.converter.BooleanConverter;
+ 
+-/** Scenario: tabel ontbreekt in de Postgres-baseline. Entity blijft ongewijzigd, met een melding. */
++/** Handwerk: tabel toegevoegd aan de Postgres-baseline, converter weg. */
+ @Entity
+ @Table(name = "AUDIT_REGEL")
+ public class AuditRegel {
+@@ -14,6 +12,5 @@ public class AuditRegel {
+     @Id
+     private Long id;
+ 
+-    @Convert(converter = BooleanConverter.class)
+     private Boolean verwerkt;
+ }
+diff --git a/src/main/java/nl/example/klant/domein/BasisEntiteit.java b/src/main/java/nl/example/klant/domein/BasisEntiteit.java
+index 8f30b8d..1048fdf 100644
+--- a/src/main/java/nl/example/klant/domein/BasisEntiteit.java
++++ b/src/main/java/nl/example/klant/domein/BasisEntiteit.java
+@@ -1,15 +1,12 @@
+ package nl.example.klant.domein;
+ 
+ import jakarta.persistence.Column;
+-import jakarta.persistence.Convert;
+ import jakarta.persistence.MappedSuperclass;
+-import nl.example.klant.converter.BooleanConverter;
+ 
+-/** Scenario: @MappedSuperclass met converter. De recipe kent de tabel niet en meldt dit. */
++/** Handwerk: verwijderd is boolean in Postgres, converter weg. */
+ @MappedSuperclass
+ public abstract class BasisEntiteit {
+ 
+-    @Convert(converter = BooleanConverter.class)
+     @Column(name = "VERWIJDERD")
+     private Boolean verwijderd;
+ 
+diff --git a/src/main/java/nl/example/klant/domein/Betaalmethode.java b/src/main/java/nl/example/klant/domein/Betaalmethode.java
+index db6e481..faa368f 100644
+--- a/src/main/java/nl/example/klant/domein/Betaalmethode.java
++++ b/src/main/java/nl/example/klant/domein/Betaalmethode.java
+@@ -20,13 +20,9 @@ public class Betaalmethode {
+     // SMALLINT -> boolean, laatste gebruik van BooleanConverter in dit bestand: import ook weg
+     private Boolean actief;
+ 
+-    // wordt uuid, maar het Java-type is String: melding "overweeg UUID"
+-    @Column(name = "REFERENTIE", length = 36)
+-    private String referentie;
+-
+-    // staat niet in de Postgres-baseline: melding "kolom niet gevonden"
+-    @Column(name = "SORTERING")
+-    private Integer sortering;
++    // handwerk: String -> UUID
++    @Column(name = "REFERENTIE")
++    private UUID referentie;
+ 
+     public UUID getId() {
+         return id;
+diff --git a/src/main/java/nl/example/klant/domein/Klant.java b/src/main/java/nl/example/klant/domein/Klant.java
+index fadfb28..1ed6abd 100644
+--- a/src/main/java/nl/example/klant/domein/Klant.java
++++ b/src/main/java/nl/example/klant/domein/Klant.java
+@@ -38,11 +38,12 @@ public class Klant extends BasisEntiteit {
+     @Column(name = "GEBLOKKEERD")
+     private Boolean geblokkeerd;
+ 
+-    // wordt boolean, maar het Java-type is Short: melding "type aanpassen naar Boolean"
++    // handwerk: Short -> Boolean
+     @Column(name = "MAIL_OPTIN")
+-    private Short mailOptin;
++    private Boolean mailOptin;
+ 
+-    // boolean-veld op een SMALLINT-kolom zonder converter: melding
++    // handwerk: blijft smallint, dus converter erbij
++    @Convert(converter = BooleanConverter.class)
+     @Column(name = "VIP")
+     private boolean vip;
+ 
+diff --git a/src/main/java/nl/example/klant/repository/KlantRepository.java b/src/main/java/nl/example/klant/repository/KlantRepository.java
+index a51049e..7fd4be3 100644
+--- a/src/main/java/nl/example/klant/repository/KlantRepository.java
++++ b/src/main/java/nl/example/klant/repository/KlantRepository.java
+@@ -8,16 +8,16 @@ import java.util.List;
+ 
+ public interface KlantRepository extends JpaRepository<Klant, Long> {
+ 
+-    // boolean-kolom vergeleken met 1, en WITH UR: beide gemeld
+-    @Query(value = "SELECT * FROM KLANT k WHERE k.ACTIEF = 1 AND k.VIP <> 0 WITH UR", nativeQuery = true)
++    // handwerk: actief is boolean, WITH UR bestaat niet (Postgres leest nooit uncommitted)
++    @Query(value = "SELECT * FROM klant k WHERE k.actief AND k.vip <> 0", nativeQuery = true)
+     List<Klant> actieveKlanten();
+ 
+-    // CURRENT TIMESTAMP en SYSIBM: DB2-SQL gemeld
+-    @Query(value = "SELECT CURRENT TIMESTAMP FROM SYSIBM.SYSDUMMY1", nativeQuery = true)
++    // handwerk: geen SYSIBM.SYSDUMMY1 nodig
++    @Query(value = "SELECT CURRENT_TIMESTAMP", nativeQuery = true)
+     java.sql.Timestamp nu();
+ 
+-    // DB2 for i-catalogus
+-    @Query(value = "SELECT COUNT(*) FROM QSYS2.SYSTABLES WHERE TABLE_SCHEMA = 'KLANTDB'", nativeQuery = true)
++    // handwerk: information_schema in plaats van de DB2 for i-catalogus
++    @Query(value = "SELECT COUNT(*) FROM information_schema.tables WHERE table_schema = current_schema()", nativeQuery = true)
+     long aantalTabellen();
+ 
+     // JPQL met een boolean-parameter: geen melding, werkt op beide databases
+diff --git a/src/main/resources/application-ota.yaml b/src/main/resources/application-ota.yaml
+index 8f36ddc..6da380b 100644
+--- a/src/main/resources/application-ota.yaml
++++ b/src/main/resources/application-ota.yaml
+@@ -1,8 +1,8 @@
+-# Omgevingen (O/T/A/P): schema in hoofdletters, wordt gemeld
++# Omgevingen (O/T/A/P); handwerk: schema lowercase
+ spring:
+   jpa:
+     properties:
+       hibernate:
+-        default_schema: KLANTDB
++        default_schema: klantdb
+   liquibase:
+-    default-schema: KLANTDB
++    default-schema: klantdb
+diff --git a/src/main/resources/db/changelog/db2/releases/004-audit.xml b/src/main/resources/db/changelog/db2/releases/004-audit.xml
+index 508e36a..531e212 100644
+--- a/src/main/resources/db/changelog/db2/releases/004-audit.xml
++++ b/src/main/resources/db/changelog/db2/releases/004-audit.xml
+@@ -5,7 +5,7 @@
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+         http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-latest.xsd">
+-    <changeSet id="004-audit-index" author="team">
++    <changeSet id="004-audit-index" author="team" dbms="db2" logicalFilePath="db/changelog/releases/004-audit.xml">
+         <createIndex tableName="AUDIT_REGEL" indexName="IX_AUDIT_VERWERKT">
+             <column name="VERWERKT"/>
+         </createIndex>
+diff --git a/src/main/resources/db/changelog/postgres/000-baseline.yaml b/src/main/resources/db/changelog/postgres/000-baseline.yaml
+index 85b720e..1a29194 100644
+--- a/src/main/resources/db/changelog/postgres/000-baseline.yaml
++++ b/src/main/resources/db/changelog/postgres/000-baseline.yaml
+@@ -32,7 +32,16 @@ databaseChangeLog:
+               - column: {name: code, type: VARCHAR(20)}
+               - column: {name: actief, type: BOOLEAN}
+               - column: {name: referentie, type: UUID}
+-        # audit_regel en betaalmethode.sortering ontbreken bewust (scenario's voor de meldingen)
++        - createTable:
++            tableName: audit_regel
++            columns:
++              - column: {name: id, type: BIGINT, constraints: {primaryKey: true}}
++              - column: {name: verwerkt, type: BOOLEAN}
++        - createIndex:
++            tableName: audit_regel
++            indexName: ix_audit_verwerkt
++            columns:
++              - column: {name: verwerkt}
+         - createIndex:
+             tableName: klant
+             indexName: ix_klant_naam

@@ -1,0 +1,35 @@
+databaseChangeLog:
+  - changeSet:
+      id: 003-overheid
+      author: team
+      changes:
+        - insert:
+            tableName: KLANTTYPE
+            columns:
+              - column: {name: ID, valueNumeric: 2}
+              - column: {name: CODE, value: OVERHEID}
+  - changeSet:
+      id: 003-acceptgiro-uit
+      author: team
+      changes:
+        - update:
+            tableName: BETAALMETHODE
+            columns:
+              - column: {name: ACTIEF, valueNumeric: 0}
+            where: "CODE = 'ACCEPTGIRO'"
+  - changeSet:
+      id: 003-voorbeeldklant
+      author: team
+      changes:
+        - insert:
+            tableName: KLANT
+            columns:
+              - column: {name: NAAM, value: Voorbeeldklant}
+              - column: {name: ACTIEF, valueNumeric: 1}
+              - column: {name: NIEUWSBRIEF, value: N}
+              - column: {name: GEBLOKKEERD, valueNumeric: 0}
+              - column: {name: MAIL_OPTIN, valueNumeric: 1}
+              - column: {name: VIP, valueNumeric: 0}
+              - column: {name: EXTERNE_ID, value: 0b6d7c2a-1e3f-4a5b-8c9d-0e1f2a3b4c5d}
+              - column: {name: KLANTTYPE_ID, valueNumeric: 1}
+              - column: {name: VERWIJDERD, valueNumeric: 0}

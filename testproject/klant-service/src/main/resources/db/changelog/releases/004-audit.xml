@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- Scenario: XML-changelog. Wordt verplaatst maar niet aangepast (melding). -->
+<databaseChangeLog
+        xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+        http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-latest.xsd">
+    <changeSet id="004-audit-index" author="team">
+        <createIndex tableName="AUDIT_REGEL" indexName="IX_AUDIT_VERWERKT">
+            <column name="VERWERKT"/>
+        </createIndex>
+    </changeSet>
+</databaseChangeLog>

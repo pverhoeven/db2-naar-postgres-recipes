@@ -1,0 +1,7 @@
+target/
+.idea/
+*.iml
+.DS_Store
+
+# gegenereerd door testproject/draai-migratie.sh
+testproject/werk/
